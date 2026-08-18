@@ -29,7 +29,10 @@ O **Petgram** foi pensado para resolver os maiores gargalos do cuidado pet moder
 
 ---
 
-## 🚀 Em desenvolvimento
+## 🚀 Atividades
+1° atividade
+<img width="1914" height="1005" alt="image" src="https://github.com/user-attachments/assets/e73365f3-76d0-4f8a-81bb-34c3bdcb664f" />
+
 
 Este projeto está em fase de idealização/desenvolvimento.
 
