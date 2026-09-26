@@ -1,11 +1,16 @@
 import React from "react";
 import {
+<<<<<<< HEAD
+=======
+  Image,
+>>>>>>> 1e92a31c74eb58baadca5f03e1dffc6faef9ba18
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
 
+<<<<<<< HEAD
 import { Ionicons } from "@expo/vector-icons";
 
 type Screen =
@@ -35,11 +40,28 @@ type IconName = React.ComponentProps<typeof Ionicons>["name"];
 
 export default function BottomNavigation({
   active,
+=======
+type Props = {
+  active: string;
+  isDark: boolean;
+
+  onHome: () => void;
+  onExplore: () => void;
+  onCreate: () => void;
+  onCommunities: () => void;
+  onProfile: () => void;
+};
+
+export default function BottomNavigation({
+  active,
+  isDark,
+>>>>>>> 1e92a31c74eb58baadca5f03e1dffc6faef9ba18
   onHome,
   onExplore,
   onCreate,
   onCommunities,
   onProfile,
+<<<<<<< HEAD
   telaAtual,
   onNavigate,
   isDark,
@@ -223,11 +245,153 @@ export default function BottomNavigation({
         iconFilled="person"
         label="Perfil"
       />
+=======
+}: Props) {
+  const muted = isDark ? "#A8A29A" : "#777168";
+  const gold = "#D9A82E";
+
+  return (
+    <View
+      style={[
+        styles.wrapper,
+        {
+          backgroundColor: isDark ? "#1E1E1E" : "#FFFDF8",
+          borderTopColor: isDark ? "#333333" : "#E7E0D3",
+        },
+      ]}
+    >
+      <View style={styles.navigation}>
+        <TouchableOpacity
+          style={styles.item}
+          onPress={onHome}
+          hitSlop={10}
+        >
+          <Text
+            style={[
+              styles.icon,
+              {
+                color: active === "home" ? gold : muted,
+              },
+            ]}
+          >
+            ⌂
+          </Text>
+
+          <Text
+            style={[
+              styles.label,
+              {
+                color: active === "home" ? gold : muted,
+              },
+            ]}
+          >
+            Início
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.item}
+          onPress={onExplore}
+          hitSlop={10}
+        >
+          <Text
+            style={[
+              styles.icon,
+              {
+                color: active === "explorar" ? gold : muted,
+              },
+            ]}
+          >
+            ⌕
+          </Text>
+
+          <Text
+            style={[
+              styles.label,
+              {
+                color: active === "explorar" ? gold : muted,
+              },
+            ]}
+          >
+            Explorar
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.createButton}
+          onPress={onCreate}
+          hitSlop={10}
+        >
+          <Text style={styles.plus}>+</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.item}
+          onPress={onCommunities}
+          hitSlop={10}
+        >
+          <Text
+            style={[
+              styles.communityIcon,
+              {
+                color:
+                  active === "comunidades" ? gold : muted,
+              },
+            ]}
+          >
+            👥
+          </Text>
+
+          <Text
+            style={[
+              styles.label,
+              {
+                color:
+                  active === "comunidades" ? gold : muted,
+              },
+            ]}
+          >
+            Comunidades
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.item}
+          onPress={onProfile}
+          hitSlop={10}
+        >
+          <Image
+            source={{
+              uri: "https://i.pravatar.cc/150?img=47",
+            }}
+            style={[
+              styles.profileImage,
+              {
+                borderColor:
+                  active === "perfil" ? gold : muted,
+              },
+            ]}
+          />
+
+          <Text
+            style={[
+              styles.label,
+              {
+                color: active === "perfil" ? gold : muted,
+              },
+            ]}
+          >
+            Perfil
+          </Text>
+        </TouchableOpacity>
+      </View>
+>>>>>>> 1e92a31c74eb58baadca5f03e1dffc6faef9ba18
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+<<<<<<< HEAD
   container: {
     height: 70,
     flexDirection: "row",
@@ -236,25 +400,86 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     paddingTop: 5,
     paddingBottom: 5,
+=======
+  wrapper: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderTopWidth: 1,
+    zIndex: 100,
+    elevation: 100,
+  },
+
+  navigation: {
+    height: 72,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-around",
+    paddingHorizontal: 8,
+>>>>>>> 1e92a31c74eb58baadca5f03e1dffc6faef9ba18
   },
 
   item: {
     flex: 1,
+<<<<<<< HEAD
     height: "100%",
+=======
+>>>>>>> 1e92a31c74eb58baadca5f03e1dffc6faef9ba18
     alignItems: "center",
     justifyContent: "center",
   },
 
+<<<<<<< HEAD
   label: {
     fontSize: 10,
+=======
+  icon: {
+    fontSize: 25,
+    lineHeight: 28,
+  },
+
+  communityIcon: {
+    fontSize: 21,
+    lineHeight: 26,
+  },
+
+  label: {
+    fontSize: 10,
+    fontWeight: "600",
+>>>>>>> 1e92a31c74eb58baadca5f03e1dffc6faef9ba18
     marginTop: 3,
   },
 
   createButton: {
+<<<<<<< HEAD
     width: 38,
     height: 38,
     borderRadius: 19,
     alignItems: "center",
     justifyContent: "center",
+=======
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: "#D9A82E",
+    alignItems: "center",
+    justifyContent: "center",
+    marginHorizontal: 5,
+  },
+
+  plus: {
+    color: "#FFFFFF",
+    fontSize: 32,
+    fontWeight: "300",
+    lineHeight: 36,
+  },
+
+  profileImage: {
+    width: 27,
+    height: 27,
+    borderRadius: 14,
+    borderWidth: 2,
+>>>>>>> 1e92a31c74eb58baadca5f03e1dffc6faef9ba18
   },
 });
