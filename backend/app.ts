@@ -47,9 +47,11 @@ app.use(
 app.post(
   "/uploads/image",
 
-  // Limite específico para upload em Base64
+  // Permite que a requisição Base64 chegue ao servidor.
+  // O limite real da imagem continua sendo 5 MB,
+  // validado abaixo.
   express.json({
-    limit: "8mb",
+    limit: "20mb",
   }),
 
   async (req, res) => {
@@ -57,6 +59,17 @@ app.post(
       const encoded = String(
         req.body?.base64 || ""
       );
+
+      // =================================================
+      // VERIFICAR SE RECEBEU A IMAGEM
+      // =================================================
+
+      if (!encoded) {
+        return res.status(400).json({
+          success: false,
+          message: "Nenhuma imagem foi enviada.",
+        });
+      }
 
       // =================================================
       // VALIDAR BASE64
@@ -202,13 +215,13 @@ app.post(
 
 app.use(
   express.json({
-    limit: "8mb",
+    limit: "20mb",
   })
 );
 
 app.use(
   express.urlencoded({
-    limit: "8mb",
+    limit: "20mb",
     extended: true,
   })
 );

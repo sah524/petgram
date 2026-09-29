@@ -496,33 +496,37 @@ router.get(
       if (!postId) {
         return res.status(400).json({
           success: false,
-          message:
-            "ID da publicação inválido.",
+          message: "ID da publicação inválido.",
         });
       }
 
-      const [comentarios] =
-        await pool.query(
-          `
-          SELECT
-            c.id,
-            c.post_id,
-            c.usuario_id,
-            c.texto,
-            c.criado_em,
-            u.nome
+      const [comentarios] = await pool.query(
+        `
+        SELECT
+          c.id,
+          c.post_id,
+          c.usuario_id,
+          c.texto,
+          c.criado_em,
 
-          FROM comentarios c
+          COALESCE(pet.nome, u.nome) AS nome,
+          pet.id AS pet_id,
+          pet.foto_perfil AS foto_perfil
 
-          INNER JOIN usuarios u
-            ON u.id = c.usuario_id
+        FROM comentarios c
 
-          WHERE c.post_id = ?
+        INNER JOIN usuarios u
+          ON u.id = c.usuario_id
 
-          ORDER BY c.criado_em ASC
-          `,
-          [postId]
-        );
+        LEFT JOIN pets pet
+          ON pet.usuario_id = c.usuario_id
+
+        WHERE c.post_id = ?
+
+        ORDER BY c.criado_em ASC
+        `,
+        [postId]
+      );
 
       return res.json({
         success: true,
@@ -543,110 +547,6 @@ router.get(
     }
   }
 );
-
-// =====================================================
-// PUBLICAÇÕES SALVAS
-// GET /posts/salvos/:usuarioId
-// =====================================================
-
-router.get(
-  "/salvos/:usuarioId",
-  async (req: Request, res: Response) => {
-    try {
-      const usuarioId = Number(
-        req.params.usuarioId
-      );
-
-      if (!usuarioId) {
-        return res.status(400).json({
-          success: false,
-          message: "Usuário inválido.",
-        });
-      }
-
-      const [rows] = await pool.query(
-        `
-        SELECT post_id
-        FROM publicacoes_salvas
-        WHERE usuario_id = ?
-        `,
-        [usuarioId]
-      );
-
-      return res.json({
-        success: true,
-
-        ids: (rows as any[]).map(
-          (row) => Number(row.post_id)
-        ),
-      });
-    } catch (error: any) {
-      console.error(
-        "ERRO AO CONSULTAR POSTS SALVOS:",
-        error
-      );
-
-      return res.status(500).json({
-        success: false,
-        message:
-          "Não foi possível consultar as publicações salvas. Confira a migração.",
-      });
-    }
-  }
-);
-
-// =====================================================
-// SALVAR PUBLICAÇÃO
-// POST /posts/:postId/salvar
-// =====================================================
-
-router.post(
-  "/:postId/salvar",
-  async (req: Request, res: Response) => {
-    try {
-      const postId = Number(req.params.postId);
-
-      const usuarioId = Number(
-        req.body.usuario_id
-      );
-
-      if (!postId || !usuarioId) {
-        return res.status(400).json({
-          success: false,
-          message:
-            "Post e usuário obrigatórios.",
-        });
-      }
-
-      await pool.execute(
-        `
-        INSERT IGNORE INTO publicacoes_salvas
-          (usuario_id, post_id)
-        VALUES (?, ?)
-        `,
-        [usuarioId, postId]
-      );
-
-      return res.json({
-        success: true,
-        message:
-          "Publicação salva com sucesso.",
-      });
-    } catch (error: any) {
-      console.error(
-        "ERRO AO SALVAR PUBLICAÇÃO:",
-        error
-      );
-
-      return res.status(500).json({
-        success: false,
-        message:
-          "Não foi possível salvar a publicação. Confira a migração.",
-      });
-    }
-  }
-);
-
 // =====================================================
 // REMOVER PUBLICAÇÃO SALVA
 // DELETE /posts/:postId/salvar

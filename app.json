@@ -5,13 +5,15 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
-<<<<<<< HEAD
-    "plugins": [["expo-image-picker", {
-      "photosPermission": "O PetGram usa suas fotos para criar publicações e capas de comunidades.",
-      "cameraPermission": "O PetGram usa a câmera para fotografar seu pet."
-    }]],
-=======
->>>>>>> 1e92a31c74eb58baadca5f03e1dffc6faef9ba18
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "O PetGram usa suas fotos para criar publicações e capas de comunidades.",
+          "cameraPermission": "O PetGram usa a câmera para fotografar seu pet."
+        }
+      ]
+    ],
     "splash": {
       "backgroundColor": "#ffffff"
     },
@@ -24,8 +26,4 @@
       }
     }
   }
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 1e92a31c74eb58baadca5f03e1dffc6faef9ba18

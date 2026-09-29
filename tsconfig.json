@@ -1,5 +1,4 @@
 {
-<<<<<<< HEAD
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true
@@ -9,21 +8,3 @@
     "node_modules"
   ]
 }
-=======
-<<<<<<< HEAD
-  "extends": "expo/tsconfig.base",
-  "compilerOptions": {
-    "strict": true
-  }
-}
-=======
-"compilerOptions": {
-"target": "ES2020",
-"module": "CommonJS",
-"rootDir": "src",
-"strict": true,
-"esModuleInterop": true
-}
-}
->>>>>>> b8e49b15b8d3c2cff962297f76f655ae2f40f76b
->>>>>>> 1e92a31c74eb58baadca5f03e1dffc6faef9ba18
