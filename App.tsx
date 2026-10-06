@@ -16,13 +16,15 @@ import {
 
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
-import CadastroScreen from "./Screen/CadastroScreen";
-import HomeScreen from "./Screen/HomeScreen";
-import ExplorarScreen from "./Screen/ExplorarScreen";
-import CriarPostScreen from "./Screen/CriarPostScreen";
-import ComunidadeScreen from "./Screen/ComunidadeScreen";
-import PerfilScreen from "./Screen/PerfilScreen";
-import PetsScreen from "./Screen/PetsScreen";
+import CadastroScreen from "./screens/CadastroScreen";
+import HomeScreen from "./screens/HomeScreen";
+import ExplorarScreen from "./screens/ExplorarScreen";
+import CriarPostScreen from "./screens/CriarPostScreen";
+import ComunidadeScreen from "./screens/ComunidadeScreen";
+import PerfilScreen from "./screens/PerfilScreen";
+import PetsScreen from "./screens/PetsScreen";
+import CriarComunidadeScreen from "./screens/CriarComunidadeScreen";
+import ComunidadeDetalheScreen from "./screens/ComunidadeDetalheScreen";
 
 
 export type Screen =
@@ -30,6 +32,8 @@ export type Screen =
   | "explorar"
   | "criar"
   | "comunidades"
+  | "comunidadeDetalhes"
+  | "criarComunidade"
   | "perfil"
   | "pets";
 
@@ -39,9 +43,18 @@ interface Usuario {
   email: string;
   foto_perfil: string | null;
 }
+interface Comunidade {
+  id: number;
+  nome: string;
+  descricao?: string | null;
+  imagem?: string | null;
+  quantidade_membros?: number;
+}
 
 export default function App() {
 
+const [comunidadeSelecionada, setComunidadeSelecionada] =
+  useState<Comunidade | null>(null);
 
   const [telaCadastro, setTelaCadastro] = useState(false);
   const [logado, setLogado] = useState(false);
@@ -563,15 +576,40 @@ export default function App() {
       )}
 
       {telaAtual === "comunidades" && (
+  <ComunidadeScreen
+    {...propriedadesNavegacao}
+    usuarioId={usuarioAtual?.id ?? 0}
+    token={token ?? ""}
+    onAbrirComunidade={(comunidade) => {
+      setComunidadeSelecionada(comunidade);
+      setTelaAtual("comunidadeDetalhes");
+    }}
+  />
+)}
 
-        <ComunidadeScreen
-          {...propriedadesNavegacao}
-          usuarioId={usuarioAtual?.id ?? 0}
-          token={token ?? ""}
-        />
+{telaAtual === "comunidadeDetalhes" &&
+  comunidadeSelecionada && (
+    <ComunidadeDetalheScreen
+      comunidade={comunidadeSelecionada}
+      usuarioId={usuarioAtual?.id ?? 0}
+      isDark={modoEscuro}
+      voltar={() => {
+        setTelaAtual("comunidades");
+      }}
+    />
+  )}
 
-      )}
-
+{telaAtual === "criarComunidade" && (
+  <CriarComunidadeScreen
+    isDark={modoEscuro}
+    usuarioId={usuarioAtual?.id ?? 0}
+    token={token ?? ""}
+    colors={colors}
+    onVoltar={() => {
+      setTelaAtual("comunidades");
+    }}
+  />
+)}
       {telaAtual === "perfil" && (
 
         <PerfilScreen

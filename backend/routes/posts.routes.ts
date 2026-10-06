@@ -1,4 +1,5 @@
 import { Router, Request, Response } from "express";
+
 import { pool } from "../database";
 
 const router = Router();
@@ -19,54 +20,58 @@ router.get("/", async (req: Request, res: Response) => {
 
     const [posts] = await pool.query(
       `
-      SELECT
-        p.id,
-        p.pet_id,
-        p.imagem,
-        p.legenda,
-        p.criado_em,
+        SELECT
+          p.id,
+          p.pet_id,
+          p.imagem,
+          p.legenda,
+          p.criado_em,
 
-        pet.nome AS pet_nome,
-        pet.especie,
-        pet.raca,
+          pet.nome AS pet_nome,
+          pet.especie,
+          pet.raca,
 
-        u.id AS usuario_id,
-        u.nome AS usuario_nome,
+          -- FOTO DO PERFIL DO PET
+          -- Não confundir com p.imagem, que é a foto da publicação.
+          pet.foto_perfil AS pet_foto_perfil,
 
-        (
-          SELECT COUNT(*)
-          FROM curtidas c
-          WHERE c.post_id = p.id
-        ) AS quantidade_curtidas,
+          u.id AS usuario_id,
+          u.nome AS usuario_nome,
 
-        (
-          SELECT COUNT(*)
-          FROM comentarios co
-          WHERE co.post_id = p.id
-        ) AS quantidade_comentarios,
+          (
+            SELECT COUNT(*)
+            FROM curtidas c
+            WHERE c.post_id = p.id
+          ) AS quantidade_curtidas,
 
-        CASE
-          WHEN ? > 0 AND EXISTS (
-            SELECT 1
-            FROM curtidas mc
-            WHERE mc.post_id = p.id
-              AND mc.usuario_id = ?
-          )
-          THEN 1
-          ELSE 0
-        END AS curtido_por_mim
+          (
+            SELECT COUNT(*)
+            FROM comentarios co
+            WHERE co.post_id = p.id
+          ) AS quantidade_comentarios,
 
-      FROM posts p
+          CASE
+            WHEN ? > 0 AND EXISTS (
+              SELECT 1
+              FROM curtidas mc
+              WHERE mc.post_id = p.id
+                AND mc.usuario_id = ?
+            )
+            THEN 1
+            ELSE 0
+          END AS curtido_por_mim
 
-      INNER JOIN pets pet
-        ON pet.id = p.pet_id
+        FROM posts p
 
-      INNER JOIN usuarios u
-        ON u.id = pet.usuario_id
+        INNER JOIN pets pet
+          ON pet.id = p.pet_id
 
-      WHERE (? = 0 OR u.id = ?)
+        INNER JOIN usuarios u
+          ON u.id = pet.usuario_id
 
-      ORDER BY p.criado_em DESC
+        WHERE (? = 0 OR u.id = ?)
+
+        ORDER BY p.criado_em DESC
       `,
       [
         usuarioId,
@@ -81,7 +86,9 @@ router.get("/", async (req: Request, res: Response) => {
         id: post.id,
         pet_id: post.pet_id,
 
+        // FOTO DA PUBLICAÇÃO
         imagem: post.imagem,
+
         legenda: post.legenda,
         criado_em: post.criado_em,
 
@@ -89,6 +96,9 @@ router.get("/", async (req: Request, res: Response) => {
           nome: post.pet_nome,
           especie: post.especie,
           raca: post.raca,
+
+          // FOTO FIXA DO PERFIL DO PET
+          foto_perfil: post.pet_foto_perfil,
         },
 
         usuario: {
@@ -139,6 +149,7 @@ router.post(
   async (req: Request, res: Response) => {
     try {
       const postId = Number(req.params.postId);
+
       const usuarioId = Number(
         req.body.usuario_id
       );
@@ -154,10 +165,10 @@ router.post(
       // Verifica se o post existe
       const [posts] = await pool.query(
         `
-        SELECT id
-        FROM posts
-        WHERE id = ?
-        LIMIT 1
+          SELECT id
+          FROM posts
+          WHERE id = ?
+          LIMIT 1
         `,
         [postId]
       );
@@ -173,10 +184,10 @@ router.post(
       // Verifica se o usuário existe
       const [usuarios] = await pool.query(
         `
-        SELECT id
-        FROM usuarios
-        WHERE id = ?
-        LIMIT 1
+          SELECT id
+          FROM usuarios
+          WHERE id = ?
+          LIMIT 1
         `,
         [usuarioId]
       );
@@ -192,11 +203,11 @@ router.post(
       // Verifica se já curtiu
       const [curtidas] = await pool.query(
         `
-        SELECT id
-        FROM curtidas
-        WHERE post_id = ?
-          AND usuario_id = ?
-        LIMIT 1
+          SELECT id
+          FROM curtidas
+          WHERE post_id = ?
+            AND usuario_id = ?
+          LIMIT 1
         `,
         [postId, usuarioId]
       );
@@ -213,9 +224,9 @@ router.post(
 
       await pool.execute(
         `
-        INSERT INTO curtidas
-          (post_id, usuario_id)
-        VALUES (?, ?)
+          INSERT INTO curtidas
+            (post_id, usuario_id)
+          VALUES (?, ?)
         `,
         [postId, usuarioId]
       );
@@ -266,6 +277,7 @@ router.delete(
   async (req: Request, res: Response) => {
     try {
       const postId = Number(req.params.postId);
+
       const usuarioId = Number(
         req.body.usuario_id
       );
@@ -281,9 +293,9 @@ router.delete(
       const [resultado]: any =
         await pool.execute(
           `
-          DELETE FROM curtidas
-          WHERE post_id = ?
-            AND usuario_id = ?
+            DELETE FROM curtidas
+            WHERE post_id = ?
+              AND usuario_id = ?
           `,
           [postId, usuarioId]
         );
@@ -342,9 +354,9 @@ router.get(
 
       const [resultado] = await pool.query(
         `
-        SELECT COUNT(*) AS quantidade
-        FROM curtidas
-        WHERE post_id = ?
+          SELECT COUNT(*) AS quantidade
+          FROM curtidas
+          WHERE post_id = ?
         `,
         [postId]
       );
@@ -404,10 +416,10 @@ router.post(
       // Verifica o post
       const [posts] = await pool.query(
         `
-        SELECT id
-        FROM posts
-        WHERE id = ?
-        LIMIT 1
+          SELECT id
+          FROM posts
+          WHERE id = ?
+          LIMIT 1
         `,
         [postId]
       );
@@ -423,10 +435,10 @@ router.post(
       // Verifica usuário
       const [usuarios] = await pool.query(
         `
-        SELECT id
-        FROM usuarios
-        WHERE id = ?
-        LIMIT 1
+          SELECT id
+          FROM usuarios
+          WHERE id = ?
+          LIMIT 1
         `,
         [usuarioId]
       );
@@ -442,9 +454,9 @@ router.post(
       const [resultado]: any =
         await pool.execute(
           `
-          INSERT INTO comentarios
-            (post_id, usuario_id, texto)
-          VALUES (?, ?, ?)
+            INSERT INTO comentarios
+              (post_id, usuario_id, texto)
+            VALUES (?, ?, ?)
           `,
           [
             postId,
@@ -496,34 +508,35 @@ router.get(
       if (!postId) {
         return res.status(400).json({
           success: false,
-          message: "ID da publicação inválido.",
+          message:
+            "ID da publicação inválido.",
         });
       }
 
       const [comentarios] = await pool.query(
         `
-        SELECT
-          c.id,
-          c.post_id,
-          c.usuario_id,
-          c.texto,
-          c.criado_em,
+          SELECT
+            c.id,
+            c.post_id,
+            c.usuario_id,
+            c.texto,
+            c.criado_em,
 
-          COALESCE(pet.nome, u.nome) AS nome,
-          pet.id AS pet_id,
-          pet.foto_perfil AS foto_perfil
+            COALESCE(pet.nome, u.nome) AS nome,
+            pet.id AS pet_id,
+            pet.foto_perfil AS foto_perfil
 
-        FROM comentarios c
+          FROM comentarios c
 
-        INNER JOIN usuarios u
-          ON u.id = c.usuario_id
+          INNER JOIN usuarios u
+            ON u.id = c.usuario_id
 
-        LEFT JOIN pets pet
-          ON pet.usuario_id = c.usuario_id
+          LEFT JOIN pets pet
+            ON pet.usuario_id = c.usuario_id
 
-        WHERE c.post_id = ?
+          WHERE c.post_id = ?
 
-        ORDER BY c.criado_em ASC
+          ORDER BY c.criado_em ASC
         `,
         [postId]
       );
@@ -547,6 +560,7 @@ router.get(
     }
   }
 );
+
 // =====================================================
 // REMOVER PUBLICAÇÃO SALVA
 // DELETE /posts/:postId/salvar
@@ -572,9 +586,9 @@ router.delete(
 
       await pool.execute(
         `
-        DELETE FROM publicacoes_salvas
-        WHERE usuario_id = ?
-          AND post_id = ?
+          DELETE FROM publicacoes_salvas
+          WHERE usuario_id = ?
+            AND post_id = ?
         `,
         [usuarioId, postId]
       );
@@ -624,9 +638,9 @@ router.post(
 
       await pool.execute(
         `
-        INSERT IGNORE INTO publicacoes_ocultas
-          (usuario_id, post_id)
-        VALUES (?, ?)
+          INSERT IGNORE INTO publicacoes_ocultas
+            (usuario_id, post_id)
+          VALUES (?, ?)
         `,
         [usuarioId, postId]
       );
@@ -667,15 +681,16 @@ router.get(
       if (!usuarioId) {
         return res.status(400).json({
           success: false,
-          message: "Usuário inválido.",
+          message:
+            "Usuário inválido.",
         });
       }
 
       const [rows] = await pool.query(
         `
-        SELECT post_id
-        FROM publicacoes_ocultas
-        WHERE usuario_id = ?
+          SELECT post_id
+          FROM publicacoes_ocultas
+          WHERE usuario_id = ?
         `,
         [usuarioId]
       );
@@ -684,7 +699,8 @@ router.get(
         success: true,
 
         ids: (rows as any[]).map(
-          (row) => Number(row.post_id)
+          (row) =>
+            Number(row.post_id)
         ),
       });
     } catch (error: any) {
@@ -739,9 +755,9 @@ router.post(
 
       await pool.execute(
         `
-        INSERT IGNORE INTO denuncias
-          (usuario_id, post_id, motivo)
-        VALUES (?, ?, ?)
+          INSERT IGNORE INTO denuncias
+            (usuario_id, post_id, motivo)
+          VALUES (?, ?, ?)
         `,
         [
           usuarioId,
@@ -803,16 +819,16 @@ router.delete(
       // Só o dono do pet/post pode excluir.
       const [owner] = await connection.query(
         `
-        SELECT p.id
-        FROM posts p
+          SELECT p.id
+          FROM posts p
 
-        INNER JOIN pets pet
-          ON pet.id = p.pet_id
+          INNER JOIN pets pet
+            ON pet.id = p.pet_id
 
-        WHERE p.id = ?
-          AND pet.usuario_id = ?
+          WHERE p.id = ?
+            AND pet.usuario_id = ?
 
-        LIMIT 1
+          LIMIT 1
         `,
         [postId, usuarioId]
       );
@@ -828,50 +844,51 @@ router.delete(
       }
 
       // Remove os registros relacionados antes do post.
+
       await connection.execute(
         `
-        DELETE FROM curtidas
-        WHERE post_id = ?
+          DELETE FROM curtidas
+          WHERE post_id = ?
         `,
         [postId]
       );
 
       await connection.execute(
         `
-        DELETE FROM comentarios
-        WHERE post_id = ?
+          DELETE FROM comentarios
+          WHERE post_id = ?
         `,
         [postId]
       );
 
       await connection.execute(
         `
-        DELETE FROM publicacoes_salvas
-        WHERE post_id = ?
+          DELETE FROM publicacoes_salvas
+          WHERE post_id = ?
         `,
         [postId]
       );
 
       await connection.execute(
         `
-        DELETE FROM publicacoes_ocultas
-        WHERE post_id = ?
+          DELETE FROM publicacoes_ocultas
+          WHERE post_id = ?
         `,
         [postId]
       );
 
       await connection.execute(
         `
-        DELETE FROM denuncias
-        WHERE post_id = ?
+          DELETE FROM denuncias
+          WHERE post_id = ?
         `,
         [postId]
       );
 
       await connection.execute(
         `
-        DELETE FROM posts
-        WHERE id = ?
+          DELETE FROM posts
+          WHERE id = ?
         `,
         [postId]
       );
@@ -963,11 +980,11 @@ router.post(
       // Confirma que o pet pertence ao usuário.
       const [pets] = await pool.query(
         `
-        SELECT id
-        FROM pets
-        WHERE id = ?
-          AND usuario_id = ?
-        LIMIT 1
+          SELECT id
+          FROM pets
+          WHERE id = ?
+            AND usuario_id = ?
+          LIMIT 1
         `,
         [petId, usuarioId]
       );
@@ -980,12 +997,15 @@ router.post(
         });
       }
 
+      // IMPORTANTE:
+      // A imagem da publicação é salva SOMENTE na tabela posts.
+      // Não alteramos pets.foto_perfil aqui.
       const [resultado]: any =
         await pool.execute(
           `
-          INSERT INTO posts
-            (pet_id, imagem, legenda)
-          VALUES (?, ?, ?)
+            INSERT INTO posts
+              (pet_id, imagem, legenda)
+            VALUES (?, ?, ?)
           `,
           [
             petId,

@@ -18,7 +18,7 @@ import {
   useWindowDimensions,
 } from "react-native";
 
-import BottomNavigation from "./BottomNavigation";
+import BottomNavigation from '../components/BottomNavigation';
 import { API_URL } from "../src/api";
 
 import {

@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { API_URL } from "../src/api";
-import BottomNavigation from "./BottomNavigation";
-
+import BottomNavigation from '../components/BottomNavigation';
 type Pet = { id: number; nome: string; especie: string; raca?: string | null };
 type Props = { usuarioId: number; isDark: boolean; onNavigate: (screen: any) => void };
 

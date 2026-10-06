@@ -13,7 +13,7 @@ import {
   View,
 } from "react-native";
 
-import BottomNavigation from "./BottomNavigation";
+import BottomNavigation from '../components/BottomNavigation';
 import { imageUrl } from "../src/media";
 
 

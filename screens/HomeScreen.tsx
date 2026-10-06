@@ -19,13 +19,11 @@ import {
   Share,
 } from "react-native";
 
-import {
-  SafeAreaView,
-} from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Ionicons } from "@expo/vector-icons";
 
-import BottomNavigation from "./BottomNavigation";
+import BottomNavigation from "../components/BottomNavigation";
 import { imageUrl } from "../src/media";
 
 // =====================================================
@@ -65,6 +63,9 @@ interface Post {
     nome: string;
     especie: string;
     raca: string;
+
+    // FOTO DO PERFIL DO PET
+    foto_perfil?: string | null;
   };
 
   usuario: {
@@ -139,8 +140,9 @@ export default function HomeScreen({
 
   const dourado = "#D9A82E";
 
-  // Converte corretamente valores vindos do MySQL/API (true, 1, "1", etc.)
-  const valorBooleano = (valor: unknown) =>
+  const valorBooleano = (
+    valor: unknown
+  ) =>
     valor === true ||
     valor === 1 ||
     valor === "1" ||
@@ -179,8 +181,10 @@ export default function HomeScreen({
   const [aviso, setAviso] =
     useState("");
 
-  const [acaoProcessando, setAcaoProcessando] =
-    useState(false);
+  const [
+    acaoProcessando,
+    setAcaoProcessando,
+  ] = useState(false);
 
   // ===================================================
   // CURTIDAS
@@ -253,7 +257,8 @@ export default function HomeScreen({
         ) || "versão antiga"
       );
 
-      const dados = await resposta.json();
+      const dados =
+        await resposta.json();
 
       if (
         !resposta.ok ||
@@ -267,8 +272,6 @@ export default function HomeScreen({
 
       let ocultos: number[] = [];
 
-      // Busca publicações ocultas.
-      // Se essa rota falhar, o feed continua carregando.
       try {
         const respostaOcultos =
           await fetch(
@@ -281,11 +284,14 @@ export default function HomeScreen({
 
           if (
             dadosOcultos.success &&
-            Array.isArray(dadosOcultos.ids)
+            Array.isArray(
+              dadosOcultos.ids
+            )
           ) {
             ocultos =
               dadosOcultos.ids.map(
-                (id: any) => Number(id)
+                (id: any) =>
+                  Number(id)
               );
           }
         }
@@ -351,81 +357,194 @@ export default function HomeScreen({
   // CURTIR / DESCURTIR
   // ===================================================
 
-  const alternarCurtida = async (postId: number) => {
-    if (!usuarioId || curtidasProcessando[postId]) return;
+  const alternarCurtida = async (
+    postId: number
+  ) => {
+    if (
+      !usuarioId ||
+      curtidasProcessando[postId]
+    ) {
+      return;
+    }
 
-    const jaCurtiu = curtidasLocais[postId] === true;
-    setCurtidasProcessando((atual) => ({ ...atual, [postId]: true }));
+    const jaCurtiu =
+      curtidasLocais[postId] ===
+      true;
+
+    setCurtidasProcessando(
+      (atual) => ({
+        ...atual,
+        [postId]: true,
+      })
+    );
+
     setAviso("");
 
     try {
-      const resposta = await fetch(`${API_URL}/posts/${postId}/curtir`, {
-        method: jaCurtiu ? "DELETE" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ usuario_id: usuarioId }),
-      });
+      const resposta =
+        await fetch(
+          `${API_URL}/posts/${postId}/curtir`,
+          {
+            method: jaCurtiu
+              ? "DELETE"
+              : "POST",
 
-      const textoResposta = await resposta.text();
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+
+            body: JSON.stringify({
+              usuario_id:
+                usuarioId,
+            }),
+          }
+        );
+
+      const textoResposta =
+        await resposta.text();
+
       let dados: any = {};
+
       try {
-        dados = textoResposta ? JSON.parse(textoResposta) : {};
+        dados = textoResposta
+          ? JSON.parse(
+              textoResposta
+            )
+          : {};
       } catch {
-        throw new Error(`Resposta inválida do servidor (${resposta.status}).`);
+        throw new Error(
+          `Resposta inválida do servidor (${resposta.status}).`
+        );
       }
 
-      // Se o banco já possui a curtida, sincroniza a tela em vez de falhar.
-      const mensagem = String(dados?.message || "").toLowerCase();
+      const mensagem = String(
+        dados?.message || ""
+      ).toLowerCase();
+
       const jaExisteNoBanco =
         !jaCurtiu &&
         (resposta.status === 409 ||
-          mensagem.includes("já curti") ||
-          mensagem.includes("ja curti") ||
-          mensagem.includes("já existe") ||
-          mensagem.includes("ja existe"));
+          mensagem.includes(
+            "já curti"
+          ) ||
+          mensagem.includes(
+            "ja curti"
+          ) ||
+          mensagem.includes(
+            "já existe"
+          ) ||
+          mensagem.includes(
+            "ja existe"
+          ));
 
       if (jaExisteNoBanco) {
-        setCurtidasLocais((atual) => ({ ...atual, [postId]: true }));
+        setCurtidasLocais(
+          (atual) => ({
+            ...atual,
+            [postId]: true,
+          })
+        );
+
         setPosts((atual) =>
           atual.map((post) =>
             post.id === postId
-              ? { ...post, curtido_por_mim: true }
+              ? {
+                  ...post,
+                  curtido_por_mim:
+                    true,
+                }
               : post
           )
         );
+
         return;
       }
 
-      if (!resposta.ok || dados.success === false) {
-        throw new Error(dados.message || `Erro ${resposta.status} ao atualizar a curtida.`);
+      if (
+        !resposta.ok ||
+        dados.success === false
+      ) {
+        throw new Error(
+          dados.message ||
+            `Erro ${resposta.status} ao atualizar a curtida.`
+        );
       }
 
       const novoEstado =
-        dados.curtido_por_mim !== undefined
-          ? valorBooleano(dados.curtido_por_mim)
+        dados.curtido_por_mim !==
+        undefined
+          ? valorBooleano(
+              dados.curtido_por_mim
+            )
           : !jaCurtiu;
 
-      setCurtidasLocais((atual) => ({ ...atual, [postId]: novoEstado }));
+      setCurtidasLocais(
+        (atual) => ({
+          ...atual,
+          [postId]: novoEstado,
+        })
+      );
 
       setPosts((atual) =>
         atual.map((post) => {
-          if (post.id !== postId) return post;
+          if (
+            post.id !== postId
+          ) {
+            return post;
+          }
 
-          let quantidade = Number(post.curtidas) || 0;
-          if (novoEstado && !jaCurtiu) quantidade += 1;
-          if (!novoEstado && jaCurtiu) quantidade -= 1;
+          let quantidade =
+            Number(
+              post.curtidas
+            ) || 0;
+
+          if (
+            novoEstado &&
+            !jaCurtiu
+          ) {
+            quantidade += 1;
+          }
+
+          if (
+            !novoEstado &&
+            jaCurtiu
+          ) {
+            quantidade -= 1;
+          }
 
           return {
             ...post,
-            curtidas: Math.max(0, quantidade),
-            curtido_por_mim: novoEstado,
+
+            curtidas:
+              Math.max(
+                0,
+                quantidade
+              ),
+
+            curtido_por_mim:
+              novoEstado,
           };
         })
       );
     } catch (error) {
-      console.log("Erro ao atualizar curtida:", error);
-      setAviso(error instanceof Error ? error.message : "Erro ao atualizar a curtida.");
+      console.log(
+        "Erro ao atualizar curtida:",
+        error
+      );
+
+      setAviso(
+        error instanceof Error
+          ? error.message
+          : "Erro ao atualizar a curtida."
+      );
     } finally {
-      setCurtidasProcessando((atual) => ({ ...atual, [postId]: false }));
+      setCurtidasProcessando(
+        (atual) => ({
+          ...atual,
+          [postId]: false,
+        })
+      );
     }
   };
 
@@ -436,15 +555,22 @@ export default function HomeScreen({
   const abrirComentarios =
     async (postId: number) => {
       if (
-        comentandoPostId === postId
+        comentandoPostId ===
+        postId
       ) {
-        setComentandoPostId(null);
+        setComentandoPostId(
+          null
+        );
+
         setComentarioTexto("");
 
         return;
       }
 
-      setComentandoPostId(postId);
+      setComentandoPostId(
+        postId
+      );
+
       setComentarioTexto("");
 
       try {
@@ -566,7 +692,6 @@ export default function HomeScreen({
 
         setComentarioTexto("");
 
-        // Atualiza contador
         setPosts((atual) =>
           atual.map((post) =>
             post.id === postId
@@ -581,7 +706,6 @@ export default function HomeScreen({
           )
         );
 
-        // Recarrega somente os comentários
         const respostaComentarios =
           await fetch(
             `${API_URL}/posts/${postId}/comentarios`
@@ -665,12 +789,27 @@ export default function HomeScreen({
   // ===================================================
 
   const acaoPost = async (
-    acao: "salvar" | "ocultar" | "denunciar" | "excluir"
+    acao:
+      | "salvar"
+      | "ocultar"
+      | "denunciar"
+      | "excluir"
   ) => {
-    if (!postMenu || !usuarioId) return;
+    if (
+      !postMenu ||
+      !usuarioId
+    ) {
+      return;
+    }
 
-    if (acao === "denunciar" && !motivoDenuncia.trim()) {
-      setAviso("Escreva o motivo da denúncia.");
+    if (
+      acao === "denunciar" &&
+      !motivoDenuncia.trim()
+    ) {
+      setAviso(
+        "Escreva o motivo da denúncia."
+      );
+
       return;
     }
 
@@ -678,7 +817,9 @@ export default function HomeScreen({
       setAcaoProcessando(true);
       setAviso("");
 
-      const postId = postMenu.id;
+      const postId =
+        postMenu.id;
+
       const rotas = {
         salvar: `${API_URL}/posts/${postId}/salvar`,
         ocultar: `${API_URL}/posts/${postId}/ocultar`,
@@ -686,47 +827,115 @@ export default function HomeScreen({
         excluir: `${API_URL}/posts/${postId}`,
       };
 
-      const resposta = await fetch(rotas[acao], {
-        method: acao === "excluir" ? "DELETE" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          usuario_id: usuarioId,
-          ...(acao === "denunciar" ? { motivo: motivoDenuncia.trim() } : {}),
-        }),
-      });
+      const resposta =
+        await fetch(
+          rotas[acao],
+          {
+            method:
+              acao === "excluir"
+                ? "DELETE"
+                : "POST",
 
-      const textoResposta = await resposta.text();
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+
+            body: JSON.stringify({
+              usuario_id:
+                usuarioId,
+
+              ...(acao ===
+              "denunciar"
+                ? {
+                    motivo:
+                      motivoDenuncia.trim(),
+                  }
+                : {}),
+            }),
+          }
+        );
+
+      const textoResposta =
+        await resposta.text();
+
       let dados: any = {};
+
       try {
-        dados = textoResposta ? JSON.parse(textoResposta) : {};
+        dados = textoResposta
+          ? JSON.parse(
+              textoResposta
+            )
+          : {};
       } catch {
-        throw new Error(`A rota ${acao} respondeu de forma inválida (${resposta.status}).`);
+        throw new Error(
+          `A rota ${acao} respondeu de forma inválida (${resposta.status}).`
+        );
       }
 
-      if (!resposta.ok || dados.success === false) {
-        throw new Error(dados.message || `Não foi possível ${acao} a publicação. Erro ${resposta.status}.`);
+      if (
+        !resposta.ok ||
+        dados.success === false
+      ) {
+        throw new Error(
+          dados.message ||
+            `Não foi possível ${acao} a publicação. Erro ${resposta.status}.`
+        );
       }
 
-      if (acao === "ocultar" || acao === "excluir") {
-        setPosts((atual) => atual.filter((post) => post.id !== postId));
+      if (
+        acao === "ocultar" ||
+        acao === "excluir"
+      ) {
+        setPosts((atual) =>
+          atual.filter(
+            (post) =>
+              post.id !==
+              postId
+          )
+        );
       }
 
       const mensagens = {
-        salvar: "Publicação salva no perfil.",
-        ocultar: "Publicação ocultada do seu feed.",
-        denunciar: "Denúncia registrada.",
-        excluir: "Publicação excluída.",
+        salvar:
+          "Publicação salva no perfil.",
+
+        ocultar:
+          "Publicação ocultada do seu feed.",
+
+        denunciar:
+          "Denúncia registrada.",
+
+        excluir:
+          "Publicação excluída.",
       };
 
       setPostMenu(null);
+
       setMotivoDenuncia("");
-      setConfirmarExclusao(false);
-      setAviso(mensagens[acao]);
+
+      setConfirmarExclusao(
+        false
+      );
+
+      setAviso(
+        mensagens[acao]
+      );
     } catch (error) {
-      console.log(`Erro na ação ${acao}:`, error);
-      setAviso(error instanceof Error ? error.message : "Não foi possível concluir a ação.");
+      console.log(
+        `Erro na ação ${acao}:`,
+        error
+      );
+
+      setAviso(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível concluir a ação."
+      );
     } finally {
-      setAcaoProcessando(false);
+      setAcaoProcessando(
+        false
+      );
     }
   };
 
@@ -740,8 +949,13 @@ export default function HomeScreen({
         await Share.share({
           message:
             `${post.pet.nome}: ` +
-            `${post.legenda || "Publicação no PetGram"}` +
-            `\n${imageUrl(post.imagem)}`,
+            `${
+              post.legenda ||
+              "Publicação no PetGram"
+            }` +
+            `\n${imageUrl(
+              post.imagem
+            )}`,
         });
       } catch (error) {
         console.log(
@@ -898,8 +1112,6 @@ export default function HomeScreen({
             styles.headerAcoes
           }
         >
-          {/* TEMA */}
-
           <TouchableOpacity
             style={
               styles.botaoHeader
@@ -920,8 +1132,6 @@ export default function HomeScreen({
               color={dourado}
             />
           </TouchableOpacity>
-
-          {/* COMUNIDADES */}
 
           <TouchableOpacity
             style={
@@ -956,8 +1166,6 @@ export default function HomeScreen({
           false
         }
       >
-        {/* ERRO */}
-
         {erro ? (
           <View
             style={
@@ -1005,8 +1213,6 @@ export default function HomeScreen({
             </TouchableOpacity>
           </View>
         ) : null}
-
-        {/* SEM POSTS */}
 
         {!erro &&
           posts.length === 0 && (
@@ -1082,12 +1288,25 @@ export default function HomeScreen({
                   irParaPerfil
                 }
               >
+                {/* =====================================
+                    FOTO DO PERFIL DO PET
+                    NÃO USA MAIS post.imagem
+                ===================================== */}
+
                 <Image
-                  source={{
-                    uri: imageUrl(
-                      post.imagem
-                    ),
-                  }}
+                  source={
+                    post.pet
+                      .foto_perfil
+                      ? {
+                          uri: imageUrl(
+                            post.pet
+                              .foto_perfil
+                          ),
+                        }
+                      : require(
+                          "../assets/Logo-Petgram.jpeg"
+                        )
+                  }
                   style={
                     styles.postAvatar
                   }
@@ -1124,8 +1343,6 @@ export default function HomeScreen({
                 </View>
               </TouchableOpacity>
 
-              {/* TRÊS PONTINHOS */}
-
               <TouchableOpacity
                 accessibilityLabel="Opções da publicação"
                 accessibilityRole="button"
@@ -1151,7 +1368,10 @@ export default function HomeScreen({
               </TouchableOpacity>
             </View>
 
-            {/* FOTO */}
+            {/* =========================================
+                FOTO DA PUBLICAÇÃO
+                CONTINUA SENDO post.imagem
+            ========================================= */}
 
             <Image
               source={{
@@ -1180,8 +1400,6 @@ export default function HomeScreen({
                   styles.acoesEsquerda
                 }
               >
-                {/* CURTIR */}
-
                 <TouchableOpacity
                   style={styles.acao}
                   disabled={
@@ -1235,8 +1453,6 @@ export default function HomeScreen({
                   </Text>
                 </TouchableOpacity>
 
-                {/* COMENTAR */}
-
                 <TouchableOpacity
                   style={styles.acao}
                   onPress={() =>
@@ -1263,8 +1479,6 @@ export default function HomeScreen({
                     {post.comentarios}
                   </Text>
                 </TouchableOpacity>
-
-                {/* COMPARTILHAR */}
 
                 <TouchableOpacity
                   style={styles.acao}
@@ -1541,9 +1755,7 @@ export default function HomeScreen({
         />
       </ScrollView>
 
-      {/* ===============================================
-          AVISO
-      =============================================== */}
+      {/* AVISO */}
 
       {!!aviso &&
         !postMenu && (
@@ -1625,8 +1837,6 @@ export default function HomeScreen({
               },
             ]}
           >
-            {/* TOPO */}
-
             <View
               style={
                 styles.menuCabecalho
@@ -1889,7 +2099,7 @@ export default function HomeScreen({
               </TouchableOpacity>
             </View>
 
-            {/* EXCLUIR - SÓ DONO */}
+            {/* EXCLUIR */}
 
             {postMenu?.usuario.id ===
               usuarioId && (
@@ -2060,8 +2270,6 @@ export default function HomeScreen({
               </>
             )}
 
-            {/* ERRO/AVISO DENTRO DO MODAL */}
-
             {!!aviso && (
               <View
                 style={
@@ -2083,8 +2291,6 @@ export default function HomeScreen({
                 </Text>
               </View>
             )}
-
-            {/* PROCESSANDO */}
 
             {acaoProcessando &&
               !confirmarExclusao && (
@@ -2112,8 +2318,6 @@ export default function HomeScreen({
                   </Text>
                 </View>
               )}
-
-            {/* CANCELAR */}
 
             <TouchableOpacity
               style={[
@@ -2147,9 +2351,7 @@ export default function HomeScreen({
         </View>
       </Modal>
 
-      {/* ===============================================
-          MENU INFERIOR
-      =============================================== */}
+      {/* MENU INFERIOR */}
 
       <BottomNavigation
         active="home"
@@ -2182,20 +2384,13 @@ const styles =
       flex: 1,
     },
 
-    // HEADER
-
     header: {
       height: 72,
-
       flexDirection: "row",
-
       alignItems: "center",
-
       justifyContent:
         "space-between",
-
       paddingHorizontal: 18,
-
       borderBottomWidth: 1,
     },
 
@@ -2205,65 +2400,49 @@ const styles =
 
     logoContainer: {
       flexDirection: "row",
-
       alignItems: "center",
     },
 
     logoImagemContainer: {
       width: 44,
-
       height: 44,
-
       borderRadius: 22,
-
       overflow: "hidden",
-
       marginRight: 9,
-
       padding: 3,
     },
 
     logoImagem: {
       width: "100%",
-
       height: "100%",
-
       borderRadius: 20,
     },
 
     logoTextoContainer: {
       flexDirection: "row",
-
       alignItems: "center",
     },
 
     logoPet: {
       fontSize: 22,
-
       fontWeight: "800",
     },
 
     logoGram: {
       fontSize: 22,
-
       fontWeight: "800",
-
       color: "#D9A82E",
     },
 
     headerAcoes: {
       flexDirection: "row",
-
       alignItems: "center",
-
       gap: 15,
     },
 
     botaoHeader: {
       padding: 4,
     },
-
-    // SCROLL
 
     scroll: {
       flex: 1,
@@ -2277,13 +2456,9 @@ const styles =
       alignItems: "center",
     },
 
-    // POST
-
     postCard: {
       width: "100%",
-
       marginBottom: 15,
-
       paddingBottom: 12,
     },
 
@@ -2293,65 +2468,48 @@ const styles =
 
     postHeader: {
       height: 62,
-
       paddingHorizontal: 15,
-
       flexDirection: "row",
-
       alignItems: "center",
-
       justifyContent:
         "space-between",
     },
 
     postUsuario: {
       flexDirection: "row",
-
       alignItems: "center",
-
       flex: 1,
     },
 
     postAvatar: {
       width: 42,
-
       height: 42,
-
       borderRadius: 21,
-
       marginRight: 10,
     },
 
     postNome: {
       fontSize: 15,
-
       fontWeight: "700",
     },
 
     postLocal: {
       fontSize: 12,
-
       marginTop: 2,
     },
 
     botaoOpcoes: {
       width: 42,
-
       height: 42,
-
       borderRadius: 21,
-
       alignItems: "center",
-
       justifyContent:
         "center",
     },
 
     postImagem: {
       width: "100%",
-
       height: 320,
-
       backgroundColor:
         "#EEEEEE",
     },
@@ -2360,54 +2518,37 @@ const styles =
       height: 420,
     },
 
-    // AÇÕES
-
     acoesPost: {
       paddingHorizontal: 15,
-
       paddingTop: 12,
-
       flexDirection: "row",
-
       justifyContent:
         "space-between",
     },
 
     acoesEsquerda: {
       flexDirection: "row",
-
       alignItems: "center",
     },
 
     acao: {
       minWidth: 42,
-
       minHeight: 38,
-
       flexDirection: "row",
-
       alignItems: "center",
-
       marginRight: 15,
     },
 
     quantidade: {
       fontSize: 13,
-
       marginLeft: 5,
-
       fontWeight: "600",
     },
 
-    // COMENTÁRIOS
-
     comentariosContainer: {
       marginTop: 10,
-
       paddingHorizontal: 15,
-
       paddingTop: 8,
-
       borderTopWidth: 1,
     },
 
@@ -2417,79 +2558,56 @@ const styles =
 
     comentarioUsuario: {
       fontSize: 13,
-
       fontWeight: "700",
-
       marginBottom: 2,
     },
 
     comentarioTexto: {
       fontSize: 13,
-
       lineHeight: 18,
     },
 
     semComentarios: {
       fontSize: 13,
-
       paddingVertical: 8,
     },
 
     comentarioArea: {
       flexDirection: "row",
-
       alignItems: "flex-end",
-
       paddingTop: 10,
-
       gap: 8,
     },
 
     inputComentario: {
       flex: 1,
-
       minHeight: 42,
-
       maxHeight: 90,
-
       borderWidth: 1,
-
       borderRadius: 20,
-
       paddingHorizontal: 15,
-
       paddingVertical: 10,
-
       fontSize: 14,
     },
 
     botaoEnviar: {
       width: 42,
-
       height: 42,
-
       borderRadius: 21,
-
       backgroundColor:
         "#D9A82E",
-
       justifyContent:
         "center",
-
       alignItems: "center",
     },
 
-    // LEGENDA
-
     legendaContainer: {
       paddingHorizontal: 15,
-
       paddingTop: 10,
     },
 
     legenda: {
       fontSize: 14,
-
       lineHeight: 20,
     },
 
@@ -2499,26 +2617,19 @@ const styles =
 
     comentarios: {
       fontSize: 13,
-
       marginTop: 7,
     },
 
     dataPost: {
       fontSize: 11,
-
       marginTop: 7,
     },
 
-    // LOADING
-
     loadingContainer: {
       flex: 1,
-
       alignItems: "center",
-
       justifyContent:
         "center",
-
       gap: 12,
     },
 
@@ -2526,373 +2637,255 @@ const styles =
       fontSize: 15,
     },
 
-    // ERRO
-
     errorContainer: {
       alignItems: "center",
-
       justifyContent:
         "center",
-
       paddingHorizontal: 30,
-
       paddingVertical: 40,
     },
 
     errorText: {
       fontSize: 15,
-
       textAlign: "center",
-
       marginTop: 10,
-
       marginBottom: 20,
     },
 
     retryButton: {
       paddingHorizontal: 20,
-
       paddingVertical: 11,
-
       borderRadius: 8,
     },
 
     retryButtonText: {
       color: "#FFFFFF",
-
       fontWeight: "700",
     },
 
-    // VAZIO
-
     vazioContainer: {
       alignItems: "center",
-
       justifyContent:
         "center",
-
       paddingHorizontal: 30,
-
       paddingVertical: 70,
     },
 
     vazioTitulo: {
       fontSize: 18,
-
       fontWeight: "700",
-
       marginTop: 12,
     },
 
     vazioTexto: {
       fontSize: 14,
-
       marginTop: 5,
-
       textAlign: "center",
     },
 
-    // AVISO
-
     avisoContainer: {
       marginHorizontal: 12,
-
       marginVertical: 7,
-
       paddingHorizontal: 12,
-
       paddingVertical: 10,
-
       borderWidth: 1,
-
       borderRadius: 12,
-
       flexDirection: "row",
-
       alignItems: "center",
-
       gap: 8,
     },
 
     avisoTexto: {
       flex: 1,
-
       fontSize: 13,
     },
 
-    // MODAL
-
     modalFundo: {
       flex: 1,
-
       backgroundColor:
         "rgba(0, 0, 0, 0.55)",
-
       justifyContent:
         "center",
-
       alignItems: "center",
-
       paddingHorizontal: 22,
     },
 
     menuPost: {
       width: "100%",
-
       maxWidth: 400,
-
       maxHeight: "90%",
-
       borderRadius: 22,
-
       borderWidth: 1,
-
       paddingHorizontal: 18,
-
       paddingTop: 20,
-
       paddingBottom: 8,
     },
 
     menuCabecalho: {
       flexDirection: "row",
-
       alignItems:
         "flex-start",
-
       paddingBottom: 13,
     },
 
     menuTitulo: {
       fontSize: 19,
-
       fontWeight: "800",
     },
 
     menuSubtitulo: {
       fontSize: 13,
-
       marginTop: 3,
     },
 
     menuFechar: {
       width: 38,
-
       height: 38,
-
       borderRadius: 19,
-
       alignItems: "center",
-
       justifyContent:
         "center",
     },
 
     menuOpcao: {
       minHeight: 62,
-
       flexDirection: "row",
-
       alignItems: "center",
-
       borderTopWidth: 1,
     },
 
     menuIcone: {
       width: 40,
-
       height: 40,
-
       borderRadius: 20,
-
       alignItems: "center",
-
       justifyContent:
         "center",
     },
 
     menuTexto: {
       flex: 1,
-
       fontSize: 15,
-
       fontWeight: "600",
-
       marginLeft: 12,
     },
 
-    // DENÚNCIA
-
     denunciaArea: {
       borderTopWidth: 1,
-
       paddingVertical: 13,
     },
 
     denunciaTitulo: {
       flexDirection: "row",
-
       alignItems: "center",
-
       marginBottom: 10,
     },
 
     inputDenuncia: {
       minHeight: 70,
-
       maxHeight: 110,
-
       borderWidth: 1,
-
       borderRadius: 12,
-
       paddingHorizontal: 12,
-
       paddingVertical: 10,
-
       textAlignVertical:
         "top",
-
       fontSize: 14,
     },
 
     botaoDenunciar: {
       height: 42,
-
       borderRadius: 10,
-
       backgroundColor:
         "#B42318",
-
       marginTop: 9,
-
       flexDirection: "row",
-
       alignItems: "center",
-
       justifyContent:
         "center",
-
       gap: 7,
     },
 
     botaoDenunciarTexto: {
       color: "#FFFFFF",
-
       fontWeight: "700",
-
       fontSize: 13,
     },
 
-    // CONFIRMAR EXCLUSÃO
-
     confirmarArea: {
       borderTopWidth: 1,
-
       paddingVertical: 14,
     },
 
     confirmarTitulo: {
       fontSize: 15,
-
       fontWeight: "700",
     },
 
     confirmarTexto: {
       fontSize: 13,
-
       marginTop: 4,
-
       marginBottom: 12,
     },
 
     confirmarBotoes: {
       flexDirection: "row",
-
       gap: 8,
     },
 
     botaoConfirmarCancelar: {
       flex: 1,
-
       height: 42,
-
       borderRadius: 10,
-
       borderWidth: 1,
-
       alignItems: "center",
-
       justifyContent:
         "center",
     },
 
     botaoConfirmarExcluir: {
       flex: 1,
-
       height: 42,
-
       borderRadius: 10,
-
       backgroundColor:
         "#B42318",
-
       flexDirection: "row",
-
       alignItems: "center",
-
       justifyContent:
         "center",
-
       gap: 6,
     },
 
     botaoConfirmarExcluirTexto: {
       color: "#FFFFFF",
-
       fontWeight: "700",
     },
 
-    // AVISO MODAL
-
     menuAviso: {
       flexDirection: "row",
-
       alignItems:
         "flex-start",
-
       gap: 7,
-
       backgroundColor:
         "#FEECEB",
-
       padding: 10,
-
       borderRadius: 9,
-
       marginVertical: 5,
     },
 
     menuAvisoTexto: {
       flex: 1,
-
       color: "#B42318",
-
       fontSize: 12,
-
       lineHeight: 17,
     },
 
     processando: {
       flexDirection: "row",
-
       justifyContent:
         "center",
-
       alignItems: "center",
-
       gap: 8,
-
       paddingVertical: 10,
     },
 
@@ -2900,24 +2893,17 @@ const styles =
       fontSize: 13,
     },
 
-    // CANCELAR
-
     menuCancelar: {
       minHeight: 52,
-
       borderTopWidth: 1,
-
       alignItems: "center",
-
       justifyContent:
         "center",
-
       marginTop: 5,
     },
 
     menuCancelarTexto: {
       fontSize: 15,
-
       fontWeight: "700",
     },
   });

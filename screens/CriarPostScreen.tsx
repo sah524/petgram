@@ -13,7 +13,7 @@ import {
 } from "react-native";
 
 import { API_URL } from "../src/api";
-import BottomNavigation from "./BottomNavigation";
+import BottomNavigation from '../components/BottomNavigation';
 import {
   escolherImagem,
   enviarImagem,
