@@ -4,8 +4,4 @@ dist/
 web-build/
 .env
 .env.*
-<<<<<<< HEAD
-!.env.examplebackend/uploads/
-=======
 !.env.example
->>>>>>> 1e92a31c74eb58baadca5f03e1dffc6faef9ba18
