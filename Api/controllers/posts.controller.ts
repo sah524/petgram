@@ -888,13 +888,20 @@ router.post("/", async (req: Request, res: Response) => {
       });
     }
 
+    // Aceita imagens antigas (/uploads/) e novas (Cloudinary)
     if (
-      imagens.some(
-        (imagem) =>
-          typeof imagem !== "string" ||
-          !imagem.startsWith("/uploads/") ||
-          imagem.length > 500
-      )
+      imagens.some((imagem) => {
+        if (typeof imagem !== "string" || imagem.length > 500) {
+          return true;
+        }
+
+        const imagemAntiga = imagem.startsWith("/uploads/");
+
+        const imagemCloudinary =
+          /^https:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\/.+/.test(imagem);
+
+        return !imagemAntiga && !imagemCloudinary;
+      })
     ) {
       return res.status(400).json({
         success: false,

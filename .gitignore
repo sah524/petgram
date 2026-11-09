@@ -4,3 +4,7 @@ node_modules/
 !.env.example
 .expo/
 Api/uploads/
+Api/uploads_backup/
+Api/migration/
+dist/
+**/dist/

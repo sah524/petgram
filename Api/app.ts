@@ -1,5 +1,7 @@
 import express from "express";
 import cors from "cors";
+import path from "path";
+import { v2 as cloudinary } from "cloudinary";
 
 import postsRoutes from "./routes/posts.routes";
 import authRoutes from "./routes/auth.routes";
@@ -11,9 +13,21 @@ import adminRoutes from "./routes/admin.routes";
 
 import { pool } from "./database";
 
-import { randomUUID } from "crypto";
-import { mkdir, writeFile } from "fs/promises";
-import path from "path";
+// =====================================================
+// CONFIGURAÇÃO DO CLOUDINARY
+// =====================================================
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+console.log("CONFIGURAÇÃO CLOUDINARY:", {
+  cloudName: Boolean(process.env.CLOUDINARY_CLOUD_NAME),
+  apiKey: Boolean(process.env.CLOUDINARY_API_KEY),
+  apiSecret: Boolean(process.env.CLOUDINARY_API_SECRET),
+});
 
 // =====================================================
 // APP
@@ -28,19 +42,13 @@ const app = express();
 app.use(cors());
 
 // =====================================================
-// UPLOADS
+// UPLOADS ANTIGOS
+// Mantém acesso às imagens que ainda estão localmente
 // =====================================================
 
-const uploadsDir = path.resolve(
-  process.cwd(),
-  "uploads"
-);
+const uploadsDir = path.resolve(process.cwd(), "uploads");
 
-// Permite acessar as imagens salvas
-app.use(
-  "/uploads",
-  express.static(uploadsDir)
-);
+app.use("/uploads", express.static(uploadsDir));
 
 // =====================================================
 // UPLOAD DE IMAGEM
@@ -53,9 +61,7 @@ app.post(
   }),
   async (req, res) => {
     try {
-      const encoded = String(
-        req.body?.base64 || ""
-      );
+      const encoded = String(req.body?.base64 || "");
 
       // Verificar se recebeu a imagem
       if (!encoded) {
@@ -77,10 +83,7 @@ app.post(
       }
 
       // Converter Base64
-      const bytes = Buffer.from(
-        encoded,
-        "base64"
-      );
+      const bytes = Buffer.from(encoded, "base64");
 
       // Limite de 5 MB
       if (bytes.length > 5_000_000) {
@@ -94,20 +97,12 @@ app.post(
       let type = "";
 
       // JPG / JPEG
-      if (
-        bytes
-          .subarray(0, 3)
-          .toString("hex") === "ffd8ff"
-      ) {
+      if (bytes.subarray(0, 3).toString("hex") === "ffd8ff") {
         type = "jpg";
       }
 
       // PNG
-      else if (
-        bytes
-          .subarray(0, 8)
-          .toString("hex") === "89504e470d0a1a0a"
-      ) {
+      else if (bytes.subarray(0, 8).toString("hex") === "89504e470d0a1a0a") {
         type = "png";
       }
 
@@ -126,37 +121,29 @@ app.post(
         });
       }
 
-      // Criar pasta de uploads
-      await mkdir(uploadsDir, {
-        recursive: true,
-      });
-
-      // Nome único
-      const filename = `${randomUUID()}.${type}`;
-
-      // Salvar imagem
-      await writeFile(
-        path.join(uploadsDir, filename),
-        bytes
+      // Enviar imagem para o Cloudinary
+      const resultado = await cloudinary.uploader.upload(
+        `data:image/${type};base64,${encoded}`,
+        {
+          folder: "petgram",
+          resource_type: "image",
+        },
       );
 
-      // Resposta
+      // Retornar endereço permanente da imagem
       return res.status(201).json({
         success: true,
-        imagem: `/uploads/${filename}`,
+        imagem: resultado.secure_url,
       });
     } catch (error) {
-      console.error(
-        "ERRO AO SALVAR IMAGEM:",
-        error
-      );
+      console.error("ERRO AO ENVIAR IMAGEM PARA O CLOUDINARY:", error);
 
       return res.status(500).json({
         success: false,
-        message: "Falha ao salvar imagem.",
+        message: "Falha ao enviar imagem.",
       });
     }
-  }
+  },
 );
 
 // =====================================================
@@ -166,14 +153,14 @@ app.post(
 app.use(
   express.json({
     limit: "20mb",
-  })
+  }),
 );
 
 app.use(
   express.urlencoded({
     limit: "20mb",
     extended: true,
-  })
+  }),
 );
 
 // =====================================================
@@ -191,81 +178,56 @@ app.get("/", (_req, res) => {
 // TESTE DO BANCO
 // =====================================================
 
-app.get(
-  "/health/db",
-  async (_req, res) => {
-    try {
-      await pool.query("SELECT 1");
+app.get("/health/db", async (_req, res) => {
+  try {
+    await pool.query("SELECT 1");
 
-      return res.json({
-        success: true,
-        message: "Conexão com MySQL ativa.",
-      });
-    } catch (error) {
-      console.error(
-        "Falha na conexão com MySQL:",
-        error
-      );
+    return res.json({
+      success: true,
+      message: "Conexão com MySQL ativa.",
+    });
+  } catch (error) {
+    console.error("Falha na conexão com MySQL:", error);
 
-      return res.status(503).json({
-        success: false,
-        message:
-          "Não foi possível conectar ao MySQL. Confira backend/.env e o serviço do banco.",
-      });
-    }
+    return res.status(503).json({
+      success: false,
+      message:
+        "Não foi possível conectar ao MySQL. Confira backend/.env e o serviço do banco.",
+    });
   }
-);
+});
 
 // =====================================================
 // ROTAS DA API
 // =====================================================
 
 // AUTENTICAÇÃO
-app.use(
-  "/auth",
-  authRoutes
-);
+app.use("/auth", authRoutes);
 
 // PUBLICAÇÕES
-app.use(
-  "/posts",
-  postsRoutes
-);
+app.use("/posts", postsRoutes);
 
 // PETS
-app.use(
-  "/pets",
-  petsRoutes
-);
+app.use("/pets", petsRoutes);
 
 // PERFIL
-app.use(
-  "/perfil",
-  perfilRoutes
-);
+app.use("/perfil", perfilRoutes);
 
 // SEGUIDORES
-app.use(
-  "/seguidores",
-  seguidoresRoutes
-);
+app.use("/seguidores", seguidoresRoutes);
 
+// ADMIN
 app.use("/admin", adminRoutes);
 
 // COMUNIDADES
-app.use(
-  "/comunidades",
-  comunidadeRoutes
-);
+app.use("/comunidades", comunidadeRoutes);
 
 // =====================================================
 // ROTA 404
 // =====================================================
 
 app.use((req, res) => {
-  console.log(
-    `ROTA NÃO ENCONTRADA: ${req.method} ${req.originalUrl}`
-  );
+  console.log(`ROTA NÃO ENCONTRADA: ${req.method} ${req.originalUrl}`);
 
   return res.status(404).json({
     success: false,
