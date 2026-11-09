@@ -1,15 +1,5 @@
-import { Platform } from "react-native";
-
-// IPv4 atual do computador.
-// Se o IPv4 mudar, altere apenas este valor.
-const COMPUTER_IP = "192.168.1.102";
-
-export const API_URL =
-  Platform.OS === "web"
-    ? "http://localhost:3000"
-    : `http://${COMPUTER_IP}:3000`;
+export const API_URL = "https://petgram-api-chi-rust.vercel.app";
 
 export const API_CONNECTION_MESSAGE =
   `Não foi possível conectar à API em ${API_URL}. ` +
-  `Verifique se o backend está rodando, se o celular está na mesma rede Wi-Fi ` +
-  `e se a porta 3000 está liberada no firewall.`;
+  `Verifique sua conexão com a internet e tente novamente.`;
